@@ -443,19 +443,25 @@ CarRental/
 ### Шаги
 
 1. Клонируйте репозиторий:
+```bash
    git clone https://github.com/your-username/CarRental.git
    cd CarRental
+```
+
 Настройте строку подключения в appsettings.Development.json (или appsettings.json):
 
+```bash
 json
 "ConnectionStrings": {
   "DefaultConnection": "Host=localhost;Port=5432;Database=carrental;Username=postgres;Password=your_password"
 }
-
+```
 #Примените миграции и запустите проект:
 
+```bash
 dotnet ef database update --project CarRental.DAL --startup-project CarRental.Web
 dotnet run --project CarRental.Web
+```
 Откройте в браузере: https://localhost:5001
 
 #Учётная запись администратора
@@ -495,8 +501,9 @@ dotnet run --project CarRental.Web
 
 #Публикация
 Для деплоя используйте встроенную команду:
-
+```bash
 dotnet publish -c Release -o ./publish
+```
 Затем скопируйте содержимое папки publish на сервер и настройте веб-сервер (Nginx, IIS и т.п.).
 
 #Лицензия
