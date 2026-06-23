@@ -13,6 +13,7 @@ public interface ICarService
     Task<IEnumerable<string>> GetUniqueBrandsAsync();
     Task<IEnumerable<string>> GetUniqueModelsAsync();
     Task<bool> IsCarAvailableAsync(Guid carId, DateTime startDate, DateTime endDate);
+    Task<IEnumerable<CarDto>> GetAvailableCarsForDateRangeAsync(DateTime startDate, DateTime endDate);
     
     // Методы для админ-панели
     Task<IEnumerable<CarDto>> GetAvailableCarsAsync();

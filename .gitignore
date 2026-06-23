@@ -17,6 +17,16 @@ site-settings.json
 /wwwroot/site-settings.json
 
 # Uploads and temp
-/wwwroot/uploads/
-/wwwroot/temp/
-/wwwroot/templates/contract_template.docx
+**/wwwroot/uploads/
+**/wwwroot/temp/
+
+# Data Protection keys 
+**/keys/
+
+# Environment files 
+*.env
+.env
+
+# Certificates
+*.pfx
+*.p12

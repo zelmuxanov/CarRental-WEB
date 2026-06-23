@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using CarRental.BLL.Interfaces.Services;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CarRental.Web.Controllers.Api
 {
@@ -8,13 +10,18 @@ namespace CarRental.Web.Controllers.Api
     public class BookingsApiController : ControllerBase
     {
         private readonly IBookingService _bookingService;
+        private readonly ILogger<BookingsApiController> _logger;
 
-        public BookingsApiController(IBookingService bookingService)
+        public BookingsApiController(
+            IBookingService bookingService,
+            ILogger<BookingsApiController> logger)
         {
             _bookingService = bookingService;
+            _logger = logger;
         }
 
         [HttpGet("occupied-dates")]
+        [EnableRateLimiting("api")]
         public async Task<IActionResult> GetOccupiedDates(Guid carId)
         {
             try
@@ -30,7 +37,8 @@ namespace CarRental.Web.Controllers.Api
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                _logger.LogError(ex, "Ошибка при получении занятых дат для автомобиля {CarId}", carId);
+                return StatusCode(500, new { error = "Ошибка при получении данных" });
             }
         }
     }

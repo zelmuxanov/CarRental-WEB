@@ -7,6 +7,7 @@ using CarRental.BLL.DTOs.Booking;
 using CarRental.Web.ViewModels.Car;
 using CarRental.Domain.Enums;
 using CarRental.Web.ViewModels.Home;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CarRental.Web.Controllers;
 
@@ -40,9 +41,6 @@ public class BookingController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> BookCar(BookCarViewModel model)
     {
-        Console.WriteLine("=== 🚗 BOOKCAR METHOD CALLED ===");
-        Console.WriteLine($"Is AJAX: {Request.Headers["X-Requested-With"] == "XMLHttpRequest"}");
-        
         bool isAjax = Request.Headers["X-Requested-With"] == "XMLHttpRequest";
         
         try
@@ -54,7 +52,6 @@ public class BookingController : Controller
                     .Select(e => e.ErrorMessage)
                     .ToList();
                     
-                Console.WriteLine($"❌ ModelState errors: {string.Join(", ", errors)}");
                 
                 return Json(new { 
                     success = false, 
@@ -65,7 +62,6 @@ public class BookingController : Controller
             var car = await _carService.GetCarByIdAsync(model.CarId);
             if (car == null || !car.IsAvailable)
             {
-                Console.WriteLine($"❌ Car not available: CarId={model.CarId}");
                 
                 return Json(new { 
                     success = false, 
@@ -76,7 +72,6 @@ public class BookingController : Controller
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                Console.WriteLine("❌ User not found");
                 
                 return Json(new { 
                     success = false, 
@@ -84,12 +79,10 @@ public class BookingController : Controller
                 });
             }
 
-            Console.WriteLine($"👤 User status: {user.Status}");
 
             // Проверяем, активирован ли пользователь
             if (user.Status != UserStatus.Active)
             {
-                Console.WriteLine($"❌ User not activated. Status: {user.Status}");
                 
                 return Json(new { 
                     success = false, 
@@ -97,7 +90,7 @@ public class BookingController : Controller
                 });
             }
 
-            // ✅ ПРОВЕРКА: ОДНО БРОНИРОВАНИЕ НА ЧЕЛОВЕКА
+            // ПРОВЕРКА: ОДНО БРОНИРОВАНИЕ НА ЧЕЛОВЕКА
             var userActiveBookings = await _bookingService.GetUserBookingsAsync(user.Id);
             var hasActiveBooking = userActiveBookings.Any(b => 
                 b.Status == BookingStatus.Pending || 
@@ -106,7 +99,6 @@ public class BookingController : Controller
             
             if (hasActiveBooking)
             {
-                Console.WriteLine($"❌ User already has an active booking");
                 
                 return Json(new { 
                     success = false, 
@@ -123,7 +115,6 @@ public class BookingController : Controller
             var unlimitedPrice = model.UnlimitedMileage ? 2000 * days : 0;
             var totalPrice = basePrice + deliveryPrice + unlimitedPrice;
 
-            Console.WriteLine($"💰 Total price: {totalPrice}");
 
             var bookingDto = new BookingRequestDto
             {
@@ -140,7 +131,6 @@ public class BookingController : Controller
             
             if (result != null)
             {
-                Console.WriteLine($"✅ Booking created: {result.Id}");
                 
                 // ✅ УЛУЧШЕННОЕ УВЕДОМЛЕНИЕ В ТЕЛЕГРАМ
                 //await SendEnhancedTelegramNotification(result, user, car);
@@ -156,9 +146,7 @@ public class BookingController : Controller
                 });
             }
             else
-            {
-                Console.WriteLine($"❌ Booking creation failed");
-                
+            {               
                 return Json(new { 
                     success = false, 
                     message = "Ошибка при создании бронирования" 
@@ -167,11 +155,10 @@ public class BookingController : Controller
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"💥 Exception: {ex.Message}\n{ex.StackTrace}");
-            
+            _logger.LogError(ex, "Ошибка при создании бронирования для пользователя {UserId}", UserId);
             return Json(new { 
                 success = false, 
-                message = $"Произошла ошибка: {ex.Message}" 
+                message = "Произошла ошибка при бронировании. Попробуйте позже или обратитесь к менеджеру." 
             });
         }
     }
@@ -269,6 +256,7 @@ public class BookingController : Controller
     [HttpPost("QuickBook")]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
+    [EnableRateLimiting("quickbook")]
     public async Task<IActionResult> QuickBook([FromBody] QuickBookingViewModel model)
     {
         if (!ModelState.IsValid)

@@ -12,7 +12,11 @@ using System.Globalization;
 using CarRental.BLL.Options;
 using CarRental.Web.Hubs;
 using CarRental.Web.Services;
+using System.IO;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -50,6 +54,16 @@ builder.Services.AddWindowsService(options =>
         options.ServiceName = "CarRental";
     });
 
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Services.AddHsts(options =>
+    {
+        options.Preload = true;
+        options.IncludeSubDomains = true;
+        options.MaxAge = TimeSpan.FromDays(365);
+    });
+}
+
 // HTTPS редирект будет использоваться в продакшене (если не за прокси)
 if (!builder.Environment.IsDevelopment())
 {
@@ -83,9 +97,9 @@ builder.Services.AddIdentity<User, IdentityRole<Guid>>(options =>
 .AddRoles<IdentityRole<Guid>>();
 
 // ================== DATA PROTECTION ==================
-//builder.Services.AddDataProtection()
-//    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "keys")))
-//    .SetApplicationName("CarRental");
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "keys")))
+    .SetApplicationName("CarRental");
 
 // ================== ОПЦИИ ==================
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.SectionName));
@@ -142,6 +156,41 @@ builder.Services.AddAutoMapper(typeof(CarRental.BLL.Mapping.MappingProfile).Asse
 builder.Services.AddHostedService<ChatCleanupService>();
 builder.Services.AddHostedService<BookingExpirationService>();
 
+// ================== RATE LIMITING ==================
+builder.Services.AddRateLimiter(options =>
+{
+    // Для входа и регистрации — не более 5 запросов в минуту с одного IP
+    options.AddFixedWindowLimiter("auth", o =>
+    {
+        o.PermitLimit = 5;
+        o.Window = TimeSpan.FromMinutes(1);
+        o.QueueLimit = 0;
+    });
+
+    // Для QuickBook — не более 3 заявок в 10 минут с одного IP
+    options.AddFixedWindowLimiter("quickbook", o =>
+    {
+        o.PermitLimit = 3;
+        o.Window = TimeSpan.FromMinutes(10);
+        o.QueueLimit = 0;
+    });
+
+    // Глобальный лимит для API
+    options.AddFixedWindowLimiter("api", o =>
+    {
+        o.PermitLimit = 60;
+        o.Window = TimeSpan.FromMinutes(1);
+        o.QueueLimit = 0;
+    });
+
+    options.OnRejected = async (context, token) =>
+    {
+        context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await context.HttpContext.Response.WriteAsync(
+            "Слишком много запросов. Попробуйте позже.", token);
+    };
+});
+
 var app = builder.Build();
 
 // ================== ИНИЦИАЛИЗАЦИЯ БД ==================
@@ -175,15 +224,28 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Home/Error");
-    //app.UseHsts();
-    //app.UseHttpsRedirection();
+    app.UseHsts();
+    app.UseHttpsRedirection();
 }
 
 app.UseRequestLocalization();
 app.UseStaticFiles();
+// ===== SECURITY HEADERS =====
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+    context.Response.Headers.Append("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    // X-XSS-Protection устарел, но некоторые старые браузеры его поддерживают:
+    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    await next();
+});
+// ============================
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapHub<ChatHub>("/chatHub");
 

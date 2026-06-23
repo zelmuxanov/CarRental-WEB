@@ -135,7 +135,6 @@ CarRental/
 │   │   ├── PageService.cs
 │   │   └── UserService.cs
 │   ├── Utilities/
-│   │   ├── PasswordEncryptor.cs
 │   │   └── PriceCalculator.cs
 │   └── Validators/
 │       ├── BookingRequestValidator.cs

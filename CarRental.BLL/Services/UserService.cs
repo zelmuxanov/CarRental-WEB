@@ -15,7 +15,6 @@ public class UserService : IUserService
     private readonly RoleManager<IdentityRole<Guid>> _roleManager;
     private readonly IMapper _mapper;
     private readonly ILogger<UserService> _logger;
-    // возможно удалю нахуй
     private readonly IEmailService _emailService;
 
     public UserService(
@@ -23,14 +22,12 @@ public class UserService : IUserService
         RoleManager<IdentityRole<Guid>> roleManager,
         IMapper mapper,
         ILogger<UserService> logger,
-        //мбмб
         IEmailService emailService)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _mapper = mapper;
         _logger = logger;
-        //....
         _emailService = emailService;
     }
 

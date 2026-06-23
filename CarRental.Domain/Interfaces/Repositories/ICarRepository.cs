@@ -24,4 +24,5 @@ public interface ICarRepository : IRepository<Car>
     Task<int> GetMaxSeatsAsync();
     Task<Car?> GetByIdWithImagesAsync(Guid id);
     Task<IEnumerable<Car>> GetAllWithImagesAsync();
+    Task<IEnumerable<Car>> GetAvailableForDateRangeAsync(DateTime startDate, DateTime endDate);
 }

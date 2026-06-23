@@ -159,4 +159,14 @@ public class CarRepository : Repository<Car>, ICarRepository
     {
         return await _dbSet.Include(c => c.Images).ToListAsync();
     }
+    public async Task<IEnumerable<Car>> GetAvailableForDateRangeAsync(DateTime startDate, DateTime endDate)
+    {
+        return await _context.Cars
+            .Where(c => c.IsAvailable && !c.Bookings.Any(b =>
+                b.Status != BookingStatus.Cancelled &&
+                b.Status != BookingStatus.Completed &&
+                b.StartDate < endDate &&
+                b.EndDate > startDate))
+            .ToListAsync();
+    }
 }

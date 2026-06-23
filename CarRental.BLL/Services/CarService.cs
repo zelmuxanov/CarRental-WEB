@@ -412,4 +412,9 @@ public class CarService : ICarService
                 .ToList();
         return _mapper.Map<IEnumerable<CarDto>>(cars);
     }
+    public async Task<IEnumerable<CarDto>> GetAvailableCarsForDateRangeAsync(DateTime startDate, DateTime endDate)
+    {
+        var cars = await _carRepository.GetAvailableForDateRangeAsync(startDate, endDate);
+        return _mapper.Map<IEnumerable<CarDto>>(cars);
+    }
 }

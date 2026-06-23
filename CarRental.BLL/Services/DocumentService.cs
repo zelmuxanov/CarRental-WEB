@@ -43,6 +43,7 @@ public class DocumentService : IDocumentService
         ValidateFile(uploadDto.File);
         if (uploadDto.File2 != null)
             ValidateFile(uploadDto.File2);
+        ValidateDocumentDetails(uploadDto);
 
         string fileUrl;
         string? fileUrl2 = null;
@@ -176,7 +177,21 @@ public class DocumentService : IDocumentService
         var document = await _documentRepository.GetByIdAsync(documentId);
         if (document == null) return false;
 
-        // Удаление файлов
+        // Проверяем что документ принадлежит этому пользователю
+        if (document.UserId != userId)
+        {
+            _logger.LogWarning("Попытка удаления чужого документа {DocumentId} пользователем {UserId}", 
+                documentId, userId);
+            return false;
+        }
+
+        // Нельзя удалять уже проверенные документы
+        if (document.Status == "Verified")
+        {
+            _logger.LogWarning("Попытка удаления верифицированного документа {DocumentId}", documentId);
+            return false;
+        }
+
         _fileStorageService.DeleteFile(document.FilePath);
         if (!string.IsNullOrEmpty(document.FilePath2))
             _fileStorageService.DeleteFile(document.FilePath2);

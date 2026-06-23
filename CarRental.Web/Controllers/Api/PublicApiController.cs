@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using CarRental.BLL.Interfaces.Services;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace CarRental.Web.Controllers.Api;
 
@@ -15,33 +16,33 @@ public class PublicApiController : ControllerBase
     }
 
     [HttpGet("free-cars")]
+    [EnableRateLimiting("api")]
     public async Task<IActionResult> GetFreeCars(DateTime startDate, DateTime endDate)
     {
-        // Приводим даты к UTC (начало дня UTC)
+        // Валидация входных дат
+        if (endDate <= startDate)
+            return BadRequest(new { error = "Дата окончания должна быть позже даты начала" });
+        
+        if (startDate.Date < DateTime.UtcNow.Date)
+            return BadRequest(new { error = "Дата начала не может быть в прошлом" });
+
         var utcStart = DateTime.SpecifyKind(startDate.Date, DateTimeKind.Utc);
         var utcEnd = DateTime.SpecifyKind(endDate.Date, DateTimeKind.Utc);
 
-        var allCars = await _carService.GetAvailableCarsAsync();
-        var freeCars = new List<object>();
-
-        foreach (var car in allCars)
+        // Один запрос вместо N+1
+        var freeCars = await _carService.GetAvailableCarsForDateRangeAsync(utcStart, utcEnd);
+        
+        var result = freeCars.Select(car => new
         {
-            var isAvailable = await _carService.IsCarAvailableAsync(car.Id, utcStart, utcEnd);
-            if (isAvailable)
-            {
-                freeCars.Add(new
-                {
-                    car.Id,
-                    car.Brand,
-                    car.Model,
-                    car.Year,
-                    car.PricePerDay,
-                    car.MainImageUrl,
-                    car.LicensePlate
-                });
-            }
-        }
+            car.Id,
+            car.Brand,
+            car.Model,
+            car.Year,
+            car.PricePerDay,
+            car.MainImageUrl,
+            car.LicensePlate
+        });
 
-        return Ok(freeCars);
+        return Ok(result);
     }
 }
