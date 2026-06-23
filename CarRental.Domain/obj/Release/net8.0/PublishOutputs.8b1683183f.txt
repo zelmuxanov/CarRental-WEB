@@ -1,0 +1,14 @@
+C:\Users\Admin\Desktop\сайт\CarRental\publish\CarRental.Domain.dll
+C:\Users\Admin\Desktop\сайт\CarRental\publish\CarRental.Domain.deps.json
+C:\Users\Admin\Desktop\сайт\CarRental\publish\CarRental.Domain.pdb
+C:\Users\Admin\Desktop\сайт\CarRental\publish\Microsoft.AspNetCore.Cryptography.Internal.dll
+C:\Users\Admin\Desktop\сайт\CarRental\publish\Microsoft.AspNetCore.Cryptography.KeyDerivation.dll
+C:\Users\Admin\Desktop\сайт\CarRental\publish\Microsoft.Extensions.Caching.Abstractions.dll
+C:\Users\Admin\Desktop\сайт\CarRental\publish\Microsoft.Extensions.DependencyInjection.dll
+C:\Users\Admin\Desktop\сайт\CarRental\publish\Microsoft.Extensions.DependencyInjection.Abstractions.dll
+C:\Users\Admin\Desktop\сайт\CarRental\publish\Microsoft.Extensions.Identity.Core.dll
+C:\Users\Admin\Desktop\сайт\CarRental\publish\Microsoft.Extensions.Identity.Stores.dll
+C:\Users\Admin\Desktop\сайт\CarRental\publish\Microsoft.Extensions.Logging.dll
+C:\Users\Admin\Desktop\сайт\CarRental\publish\Microsoft.Extensions.Logging.Abstractions.dll
+C:\Users\Admin\Desktop\сайт\CarRental\publish\Microsoft.Extensions.Options.dll
+C:\Users\Admin\Desktop\сайт\CarRental\publish\Microsoft.Extensions.Primitives.dll
