@@ -6,6 +6,7 @@ using CarRental.BLL.DTOs.Car;
 using CarRental.Web.ViewModels.Car;
 using CarRental.Domain.Entities;
 using CarRental.Domain.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace CarRental.Web.Controllers;
 
@@ -13,11 +14,15 @@ public class CarController : Controller
 {
     private readonly ICarService _carService;
     private readonly UserManager<User> _userManager;
+    private readonly ILogger<CarController> _logger;
 
-    public CarController(ICarService carService, UserManager<User> userManager)
+    public CarController(ICarService carService, 
+    UserManager<User> userManager,
+    ILogger<CarController> logger)
     {
         _carService = carService;
         _userManager = userManager;
+        _logger = logger;
     }
 
     public async Task<IActionResult> Index()
